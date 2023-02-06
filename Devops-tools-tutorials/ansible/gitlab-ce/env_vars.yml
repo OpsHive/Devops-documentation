@@ -1,0 +1,61 @@
+host: localhost #given in inventory or /etc/ansible/hosts, but this is written here as a playbook variable
+host_01_name: [localhost]
+host_01: localhost ansible_connection=local # this entry is for inventory file located at ~/ansible/inventory/hosts
+playbook_file: ansible-playbook-gitlab.yml
+package_name: gitlab-ce
+package_version: 15.8.0-ce.0
+gitlab_version: 15.8.0-ce.0
+GITLAB_VERSION: gitlab-ce=15.8.0-ce.0
+GITLAB_URL: http://gitlab.localhost.com
+gpg_key_url: https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey
+provider: AWS
+region: ams3
+aws_access_key_id: DO00P3N9R7PHME9ZMZVE
+aws_secret_access_key: uLWunM1Mduw9lTcVHK1C1Epgsabqga6AWoeom75OYAo
+endpoint: https://ams3.digitaloceanspaces.com
+aws_signature_version: 2
+use_iam_profile: false
+backup_upload_remote_directory: gitlab-backups
+backup_value: 1675243542_2023_02_01_15.8.0
+new_password: opshive@5902525
+
+# # env_vars.sh
+# export GITLAB_ROOT_PASSWORD="secret_password"
+
+#curl -fsSL https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey | gpg --dearmor > /usr/share/keyrings/gitlab_gitlab-ce-archive-keyring.gpg
+# - name: Get GitLab root password from environment file
+#   become: yes
+#   set_fact:
+#     gitlab_root_password: "{{ lookup('env', 'GITLAB_ROOT_PASSWORD') }}"
+
+# - name: Reset GitLab root password
+#   become: yes
+#   shell: sudo gitlab-rake 'gitlab:password:change[root,{{ gitlab_root_password }}]'
+
+
+# You can use the lookup module in Ansible to retrieve the password from an environment file and use it in your playbook. Here's an example:
+
+# File containing environment variables:
+
+# bash
+# Copy code
+# # env_vars.sh
+# export GITLAB_ROOT_PASSWORD="secret_password"
+# Ansible playbook:
+
+# yaml
+# Copy code
+# - name: Get GitLab root password from environment file
+#   become: yes
+#   set_fact:
+#     gitlab_root_password: "{{ lookup('env', 'GITLAB_ROOT_PASSWORD') }}"
+
+# - name: Reset GitLab root password
+#   become: yes
+#   shell: sudo gitlab-rake 'gitlab:password:change[root,{{ gitlab_root_password }}]'
+
+# Before running the playbook, you will need to source the environment file to make the environment variables available to the playbook:
+
+# ## bash
+
+# source env_vars.sh
