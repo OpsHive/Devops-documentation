@@ -17,13 +17,14 @@ And by using following miracle command, You've your private GitLab Instance READ
 sudo ./my-gitlab-ce.sh
 ```
 
+To add backup configuration, you have to run the following command, (Optional)
+
+```bash
+sudo ansible-playbook -i ~/ansible/inventory/hosts ansible-playbook-gitlab-backups.yml
+```
+
 And to completely uninstall GitLab-ce including files, Run the following command.
 
 ```bash
 sudo ./uninstall-gitlab-ce.sh
 ```
-
-Best,
-Altaf Hussain
-DevOps Engineer @OpsHive
-(writing2altaf@gmail.com)
