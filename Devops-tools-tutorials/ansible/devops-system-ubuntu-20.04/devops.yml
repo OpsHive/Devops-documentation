@@ -1,0 +1,299 @@
+---
+- name: Prepare Ubuntu 20.04 for Cloud DevOps Engineer
+  hosts: localhost
+  become: true
+  become_user: root
+
+  vars:
+    user_name: opshive
+    user_password: "0683"
+    k3d_version: "4.4.7"
+    kubectl_version: "1.23.3"
+    cockroachdb_version: "v21.2.8"
+    gcloud_version: 421.0.0
+    whatsapp_for_linux_version: "1.2.0"
+    ansible_distribution_release: focal
+    # gcloud_repo_url: "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main"
+    helm_chart_url: "https://charts.bitnami.com/bitnami"
+    zsh_plugins:
+      - kubens
+      - git
+
+  handlers:
+    - name: refresh environment for k3d
+      command: "source /etc/environment"
+    - name: refresh environment for kubectl
+      command: "source /etc/environment"
+    - name: refresh environment for CockroachDB
+      command: "source /etc/environment"
+    - name: source .zshrc for oh-my-zsh
+      command: "source /home/{{ user_name }}/.zshrc"
+      become_user: "{{ user_name }}"
+    - name: refresh gnome shell
+      command: "dbus-send --session --type=method_call --dest=org.gnome.Shell /org/gnome/Shell org.gnome.Shell.Eval string:'Main.panel.statusArea.aggregateMenu._iconSignals.emit(\"showing\")'"
+
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: true
+
+    - name: "Installing required dependencies"
+      apt:
+        name:
+          - jq
+          - curl
+          - gnupg
+          - wget
+          - snapd
+          - containerd
+          - build-essential
+          - libssl-dev
+          - zlib1g-dev
+          - libncurses5-dev
+          - libncursesw5-dev
+          - libreadline-dev
+          - libsqlite3-dev
+          - libgdbm-dev
+          - libdb5.3-dev
+          - libbz2-dev
+          - libexpat1-dev
+          - liblzma-dev
+          - tk-dev
+          - libffi-dev
+          - ca-certificates
+          - python3-dev
+          - python3-setuptools
+          - apt-transport-https
+          - software-properties-common 
+        state: latest
+      become: true
+
+    # - name: Create user with sudo privileges
+    #   user:
+    #     name: "{{ user_name }}"
+    #     password: "{{ user_password | password_hash('sha512') }}"
+    #     groups: sudo
+    #     shell: /bin/zsh
+    #     createhome: yes
+    #   become: true
+
+
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: true
+
+    - name: Importing GPG keys
+      apt_key:
+        url: "{{ item }}"
+      loop:
+        - https://keys.anydesk.com/repos/DEB-GPG-KEY
+        - https://download.docker.com/linux/ubuntu/gpg
+        - https://packages.microsoft.com/keys/microsoft.asc
+        - https://dbeaver.io/debs/dbeaver.gpg.key
+        - https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        - https://www.pgadmin.org/static/packages_pgadmin_org.pub
+      become: true
+
+
+    - name: Adding apt repositories
+      apt_repository:
+        repo: "{{ item.repo }}"
+        state: present
+        filename: "{{ item.name }}"
+        update_cache: yes
+      with_items:
+        - { name: 'docker',   repo: 'deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable' }
+        - { name: 'anydesk',  repo: 'deb http://deb.anydesk.com/ all main'}
+        - { name: 'vscode',   repo: 'deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main'}
+        - { name: 'dbeaver',  repo: 'deb https://dbeaver.io/debs/dbeaver-ce /'}
+        - { name: 'gcloud',   repo: 'deb https://packages.cloud.google.com/apt cloud-sdk main'}
+        - { name: 'pgsql',    repo: 'deb https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/{{ ansible_distribution_release }} pgadmin4 main'}
+      become: true
+#deb [signed-by=/usr/share/keyrings/packages-pgadmin-org.gpg] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/{{ ansible_distribution_release }} pgadmin4 main"
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: true
+
+    - name: "Installing apt packages"
+      apt:
+        name:
+          - docker.io
+          - anydesk
+          - code
+          - dbeaver-ce
+          - google-cloud-sdk
+          - pgadmin4
+          - step
+          - openssl
+          - s3cmd
+          - awscli
+          - virtualbox
+          - git
+          - zsh
+          - chromium-browser
+#          - lens
+        state: present
+      become: true
+
+    - name: Install WhatsApp for Linux 
+      snap:
+        name: whatsapp-for-linux
+        state: present
+        classic: true
+      #update_cache: yes
+      become: true
+
+    - name: Install slack snap
+      snap:
+        name: slack
+        channel: stable
+        classic: true
+      #update_cache: yes
+      become: true
+
+#sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: true
+
+    - name: Install from script
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3; echo "Installing Helm" && \
+        chmod 700 get_helm.sh; echo "Installing Helm" && \
+        ./get_helm.sh; echo "Installing Helm" && \
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | zsh; echo "Installing NVM" && \
+        curl -sL https://run.linkerd.io/install | zsh; echo "Installing Linkerd" && \
+        curl -sLO https://github.com/argoproj/argo/releases/download/v3.3.1/argo-linux-amd64.gz; echo "Installing Argo-CD" && \
+        gunzip argo-linux-amd64.gz; echo "Installing Argo-CD" && \
+        chmod +x argo-linux-amd64; echo "Installing Argo-CD" && \
+        mv argo-linux-amd64 /usr/local/bin; echo "Installing Argo-CD" && \
+        curl -sLO https://github.com/artberri/daddy/releases/download/v1.0.0/daddy_1.0.0_linux_amd64.tar.gz; echo "Installing Daddy-Cli" && \
+        tar -xzvf daddy_1.0.0_linux_amd64.tar.gz; echo "Installing Daddy-Cli" && \
+        chmod +x daddy; echo "Installing Daddy-Cli" && \
+        mv daddy /usr/local/bin; echo "Installing Daddy-Cli" && \
+        curl -sLO https://dl.step.sm/gh-release/cli/gh-release-header/v0.23.4/step_linux_0.23.4_amd64.tar.gz; echo "Installing Step-Cli" && \
+        tar -xzvf step_linux_0.23.4_amd64.tar.gz; echo "Installing Step-Cli" && \
+        chmod +x step_linux_0.23.4_amd64.tar.gz; echo "Installing Step-Cli" && \
+        mv step_linux_0.23.4_amd64.tar.gz /usr/local/bin; echo "Installing Step-Cli" && \
+        curl -sLO https://github.com/digitalocean/doctl/releases/download/v1.92.0/doctl-1.92.0-linux-amd64.tar.gz; echo "Installing Digital Ocean Cli" && \
+        tar -xzvf doctl-1.92.0-linux-amd64.tar.gz; echo "Installing Digital Ocean Cli" && \
+        chmod +x doctl; echo "Installing Digital Ocean Cli" && \
+        mv doctl /usr/local/bin; echo "Installing Digital Ocean Cli" && \
+        rm doctl-1.92.0-linux-amd64.tar.gz; echo "Installing Digital Ocean Cli" && \
+        wget https://zoom.us/client/latest/zoom_amd64.deb; echo "Installing Zoom" && \
+        apt install ./zoom_amd64.deb; echo "Installing Zoom" && \
+        curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose; echo "Installing docker-compose" && \
+        chmod +x /usr/local/bin/docker-compose
+        curl -sLO https://binaries.cockroachdb.com/cockroach-v23.1.0-alpha.5.linux-amd64.tgz &&
+        tar -xvzf cockroach-v23.1.0-alpha.5.linux-amd64.tgz &&
+        chmod +x cockroach-v23.1.0-alpha.5.linux-amd64/cockroach &&
+        sudo mv cockroach-v23.1.0-alpha.5.linux-amd64/cockroach /usr/local/bin
+        sudo mkdir /python 
+        cd /python
+        sudo wget https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz
+        sudo tar -xzvf Python-3.10.0.tgz
+        cd Python-3.10.0
+        ./configure --enable-optimizations
+        cd /python/Python-3.10.0
+        sudo make altinstall
+        touch .zshrc
+#         curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-422.0.0-linux-x86_64.tar.gz
+#         tar -xf google-cloud-cli-422.0.0-linux-x86.tar.gz
+#         ./google-cloud-sdk/install.sh
+
+    - name: Add current user to the docker group
+      user:
+        name: "{{ user_name }}"
+        groups: docker
+        append: yes
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: true
+
+    - name: Download and install k3d
+      get_url:
+        url: "https://github.com/rancher/k3d/releases/download/v{{ k3d_version }}/k3d-linux-amd64"
+        dest: "/usr/local/bin/k3d"
+        mode: '0755'
+        #checksum: "sha256:ddc08e0d0e870d64d66e54d57c1b158034deccbe3a3e3b2d04a13a9a851cdcf9"
+      register: download_result
+      changed_when: download_result is changed
+
+    - name: Add k3d to the path
+      lineinfile:
+        path: /etc/environment
+        line: 'PATH="$PATH:/usr/local/bin"'
+        state: present
+      notify: refresh environment for k3d
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: true
+
+    - name: Download the kubectl binary
+      get_url:
+        url: "https://storage.googleapis.com/kubernetes-release/release/v{{ kubectl_version }}/bin/linux/amd64/kubectl"
+        dest: "/usr/local/bin/kubectl"
+        mode: '0755'
+        #checksum: "sha256:58e13d04816682c56d352b020a11ea85cfb0fb0d37e358026b569c9e6510ba1e"
+      register: download_result
+      changed_when: download_result is changed
+    - name: Add kubectl to the path
+      lineinfile:
+        path: /etc/environment
+        line: 'PATH="$PATH:/usr/local/bin"'
+        state: present
+      notify: refresh environment for kubectl
+
+    - name: Add CockroachDB CLI to the path
+      lineinfile:
+        path: /etc/environment
+        line: 'PATH="$PATH:/usr/local/bin"'
+        state: present
+      notify: refresh environment for CockroachDB
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: true
+
+    - name: Install Oh My Zsh
+      git:
+        repo: https://github.com/ohmyzsh/ohmyzsh.git
+        dest: /home/{{ user_name }}/.oh-my-zsh
+      become_user: "{{ user_name }}"
+      register: ohmyzsh
+    - name: Set default shell to Zsh
+      user:
+        name: "{{ user_name }}"
+        shell: /bin/zsh
+
+    # - name: create .zshrc
+    #   command: sudo touch .zshrc
+
+    - name: Configure Oh My Zsh plugins
+      lineinfile:
+        path: /home/{{ user_name }}/.zshrc
+        regexp: "^plugins=.*$"
+        line: "plugins=({{ zsh_plugins|join(' ') }})"
+        state: present
+        backup: yes
+      become_user: "{{ user_name }}"
+      notify: source .zshrc for oh-my-zsh
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: true
