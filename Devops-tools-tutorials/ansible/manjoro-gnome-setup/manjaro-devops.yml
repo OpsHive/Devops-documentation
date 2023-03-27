@@ -1,0 +1,221 @@
+---
+- name: Install applications via snapd and pacman
+  hosts: all
+  become: true
+  vars:
+    user_name: altaf
+    ansible_become_password: 0683
+
+  tasks:
+    - name: Update system
+      pacman:
+        update_cache: true
+        upgrade: true
+
+    - name: "Installing required dependencies"
+      pacman:
+        name:
+          - jq
+          - curl
+          - gnupg
+          - wget
+          - snapd
+          - containerd
+          # - build-essential
+          # - libssl-dev
+          # - zlib1g-dev
+          # - libncurses5-dev
+          # - libncursesw5-dev
+          # - libreadline-dev
+          # - libsqlite3-dev
+          # - libgdbm-dev
+          # - libdb5.3-dev
+          # - libbz2-dev
+          # - libexpat1-dev
+          # - liblzma-dev
+          # - tk-dev
+          # - libffi-dev
+          - ca-certificates
+        #  - python3-dev
+        #  - python3-setuptools
+          # - apt-transport-https
+          # - software-properties-common 
+        state: latest
+      become: true
+
+    # - name: Install snapd
+    #   pacman:
+    #     name: snapd
+    #     state: present
+
+    - name: Enable snapd socket
+      systemd:
+        name: snapd.socket
+        state: started
+        enabled: true
+
+    - name: Install Chromium
+      community.general.snap:
+        name: chromium
+        classic: true
+
+    - name: Install Slack
+      community.general.snap:
+        name: slack
+        classic: true
+
+    - name: Install Docker
+      community.general.snap:
+        name: docker
+        classic: true
+
+    #   - name: Install Docker
+    #   pacman:
+    #     name: docker
+    #     state: present
+
+    # - name: Enable and start Docker
+    #   systemd:
+    #     name: docker.service
+    #     state: started
+    #     enabled: yes
+
+    - name: Install Docker Compose
+      pacman:
+        name: docker-compose
+        state: present
+
+    - name: Verify Docker Compose installation
+      command: docker-compose --version
+
+    - name: Install OpenSSL
+      pacman:
+        name: openssl
+        state: present
+
+    # - name: Install Step Certificate CLI
+    #   shell: curl -sL https://smallstep.com/install | zsh && source ~/.zshrc && step version
+
+    - name: Install Step CLI
+      pacman:
+        name: step-cli
+        state: present
+
+    # - name: Install Daddy CLI
+    #   shell: curl https://daddy.systems/install.sh | zsh && source ~/.zshrc && daddy version
+
+    - name: Install daddy from script
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        curl -sLO https://github.com/artberri/daddy/releases/download/v1.0.0/daddy_1.0.0_linux_amd64.tar.gz
+        tar -xzvf daddy_1.0.0_linux_amd64.tar.gz
+        chmod +x daddy
+        mv daddy /usr/local/bin
+        rm daddy_1.0.0_linux_amd64.tar.gz LICENSE README.md
+
+    - name: Install helm from script
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        chmod 700 get_helm.sh
+        ./get_helm.sh
+        rm get_helm.sh
+
+    - name: Install Argo CLI
+      shell: sudo curl -L https://github.com/argoproj/argo/releases/download/v3.1.7/argo-linux-amd64 -o /usr/local/bin/argo && sudo chmod +x /usr/local/bin/argo
+
+    - name: Install Hasura CLI
+      shell: curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | zsh -s -- 2.17.0
+
+    # - name: Install nvm & linkerd from script
+    #   become: true
+    #   environment:
+    #     HOME: "/home/{{ user_name }}"
+    #   shell: |
+    #     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | zsh
+    #     curl -sL https://run.linkerd.io/install | zsh
+
+    - name: Install doctl from script
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        curl -sLO https://github.com/digitalocean/doctl/releases/download/v1.92.0/doctl-1.92.0-linux-amd64.tar.gz
+        tar -xzvf doctl-1.92.0-linux-amd64.tar.gz
+        chmod +x doctl
+        mv doctl /usr/local/bin
+        rm doctl-1.92.0-linux-amd64.tar.gz
+
+    # - name: Install lens from script
+    #   become: true
+    #   environment:
+    #     HOME: "/home/{{ user_name }}"
+    #   shell: |
+    #     curl -fsSL https://downloads.k8slens.dev/keys/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/lens-archive-keyring.gpg > /dev/null
+    #     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/lens-archive-keyring.gpg] https://downloads.k8slens.dev/apt/debian stable main" | sudo tee /etc/apt/sources.list.d/lens.list > /dev/null
+    #     sudo apt update
+    #     sudo apt install lens
+
+    - name: Install Lens
+      community.general.snap:
+        name: kontena-lens
+        classic: true
+
+    - name: Install zoom-client
+      community.general.snap:
+        name: zoom-client
+        classic: true
+
+    # - name: Install zoom from script
+    #   become: true
+    #   environment:
+    #     HOME: "/home/{{ user_name }}"
+    #   shell: |
+    #     wget https://zoom.us/client/latest/zoom_amd64.deb
+    #     sudo apt install -y ./zoom_amd64.deb
+
+    - name: Install docker-compose from script
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+
+    - name: Install cockroachdb from script
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        curl -sLO https://binaries.cockroachdb.com/cockroach-v23.1.0-alpha.5.linux-amd64.tgz
+        tar -xvzf cockroach-v23.1.0-alpha.5.linux-amd64.tgz
+        chmod +x cockroach-v23.1.0-alpha.5.linux-amd64/cockroach
+        sudo mv cockroach-v23.1.0-alpha.5.linux-amd64/cockroach /usr/local/bin
+
+
+    - name: Install Python from script
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        sudo mkdir /python 
+        cd /python
+        sudo wget https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz
+        sudo tar -xzvf Python-3.10.0.tgz
+        cd Python-3.10.0
+        ./configure --enable-optimizations
+        cd /python/Python-3.10.0
+        sudo make altinstall
+
+    - name: Setting up preveliges for sudo user and docker
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        sudo usermod -aG sudo $USER
+        sudo usermod -aG docker $USER
+        sudo chmod 666 /var/run/docker.sock
