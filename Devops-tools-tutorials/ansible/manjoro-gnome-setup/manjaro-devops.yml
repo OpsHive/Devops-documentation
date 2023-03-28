@@ -108,12 +108,6 @@
         name: zoom-client
         classic: true
 
-    - name: Enable and start Docker
-      systemd:
-        name: docker.service
-        state: started
-        enabled: yes
-
     - name: Install Docker Compose
       pacman:
         name: docker-compose
@@ -234,5 +228,5 @@
       become: true
       shell: |
         rm -r /home/{{ user_name }}/.zshrc
-        cp -r .zshrc_new /home/{{ user_name }}
-        source .zshrc_new
+        cp -r .zshrc /home/{{ user_name }}
+        source .zshrc

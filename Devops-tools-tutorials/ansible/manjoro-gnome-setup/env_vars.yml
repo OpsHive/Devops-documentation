@@ -1,0 +1,5 @@
+user_name: altaf
+ansible_become_password: 0683
+host_01_name: [localhost]
+host_01: localhost ansible_connection=local # this entry is for inventory file located at ~/ansible/inventory/hosts
+playbook_file: manjaro-devops.yml
