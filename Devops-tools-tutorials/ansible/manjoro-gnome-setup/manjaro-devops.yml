@@ -1,7 +1,8 @@
 ---
-- name: Install applications via snapd and pacman
+- name: Install applications for Manjaro gnome
   hosts: all
   become: true
+  gather_facts: true
   vars:
     user_name: altaf
     ansible_become_password: 0683
@@ -16,37 +17,21 @@
       pacman:
         name:
           - jq
+          - git
           - curl
           - gnupg
           - wget
           - snapd
           - containerd
-          # - build-essential
-          # - libssl-dev
-          # - zlib1g-dev
-          # - libncurses5-dev
-          # - libncursesw5-dev
-          # - libreadline-dev
-          # - libsqlite3-dev
-          # - libgdbm-dev
-          # - libdb5.3-dev
-          # - libbz2-dev
-          # - libexpat1-dev
-          # - liblzma-dev
-          # - tk-dev
-          # - libffi-dev
+          - base-devel
           - ca-certificates
-        #  - python3-dev
-        #  - python3-setuptools
-          # - apt-transport-https
-          # - software-properties-common 
         state: latest
       become: true
 
-    # - name: Install snapd
-    #   pacman:
-    #     name: snapd
-    #     state: present
+    - name: Install snapd
+      pacman:
+        name: snapd
+        state: present
 
     - name: Enable snapd socket
       systemd:
@@ -69,16 +54,65 @@
         name: docker
         classic: true
 
-    #   - name: Install Docker
-    #   pacman:
-    #     name: docker
-    #     state: present
+    - name: Install dbeaver
+      community.general.snap:
+        name: dbeaver-ce
+        # classic: true
+        state: present
 
-    # - name: Enable and start Docker
-    #   systemd:
-    #     name: docker.service
-    #     state: started
-    #     enabled: yes
+    - name: Update system using pacman
+      pacman:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Update snapd
+      shell: snap refresh
+
+    - name: Install kubectl using snapd
+      snap:
+        name: kubectl
+        classic: true
+        state: present
+
+    - name: Install node
+      snap:
+        name: node
+        classic: true
+        state: present
+
+    - name: Install aws-cli 
+      snap:
+        name: aws-cli
+        classic: true
+        state: present
+
+    - name: Install google-cloud-sdk
+      snap:
+        name: google-cloud-sdk
+        classic: true
+        state: present
+
+    - name: Install microk8s
+      snap:
+        name: microk8s
+        classic: true
+        state: present
+
+    - name: Install Lens
+      community.general.snap:
+        name: kontena-lens
+        classic: true
+
+    - name: Install zoom-client
+      community.general.snap:
+        name: zoom-client
+        classic: true
+
+    - name: Enable and start Docker
+      systemd:
+        name: docker.service
+        state: started
+        enabled: yes
 
     - name: Install Docker Compose
       pacman:
@@ -93,16 +127,21 @@
         name: openssl
         state: present
 
-    # - name: Install Step Certificate CLI
-    #   shell: curl -sL https://smallstep.com/install | zsh && source ~/.zshrc && step version
-
     - name: Install Step CLI
       pacman:
         name: step-cli
         state: present
 
-    # - name: Install Daddy CLI
-    #   shell: curl https://daddy.systems/install.sh | zsh && source ~/.zshrc && daddy version
+    - name: Install google chrome from script
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        git clone https://aur.archlinux.org/google-chrome.git
+        cd google-chrome
+        makepkg -si
+        cd ..
+        rm -rf google-chrome
 
     - name: Install daddy from script
       become: true
@@ -131,13 +170,12 @@
     - name: Install Hasura CLI
       shell: curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | zsh -s -- 2.17.0
 
-    # - name: Install nvm & linkerd from script
-    #   become: true
-    #   environment:
-    #     HOME: "/home/{{ user_name }}"
-    #   shell: |
-    #     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | zsh
-    #     curl -sL https://run.linkerd.io/install | zsh
+    - name: Install linkerd from script
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        curl -sL https://run.linkerd.io/install | zsh
 
     - name: Install doctl from script
       become: true
@@ -150,41 +188,13 @@
         mv doctl /usr/local/bin
         rm doctl-1.92.0-linux-amd64.tar.gz
 
-    # - name: Install lens from script
+    # - name: Install docker-compose from script
     #   become: true
     #   environment:
     #     HOME: "/home/{{ user_name }}"
     #   shell: |
-    #     curl -fsSL https://downloads.k8slens.dev/keys/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/lens-archive-keyring.gpg > /dev/null
-    #     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/lens-archive-keyring.gpg] https://downloads.k8slens.dev/apt/debian stable main" | sudo tee /etc/apt/sources.list.d/lens.list > /dev/null
-    #     sudo apt update
-    #     sudo apt install lens
-
-    - name: Install Lens
-      community.general.snap:
-        name: kontena-lens
-        classic: true
-
-    - name: Install zoom-client
-      community.general.snap:
-        name: zoom-client
-        classic: true
-
-    # - name: Install zoom from script
-    #   become: true
-    #   environment:
-    #     HOME: "/home/{{ user_name }}"
-    #   shell: |
-    #     wget https://zoom.us/client/latest/zoom_amd64.deb
-    #     sudo apt install -y ./zoom_amd64.deb
-
-    - name: Install docker-compose from script
-      become: true
-      environment:
-        HOME: "/home/{{ user_name }}"
-      shell: |
-        curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
+    #     curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    #     chmod +x /usr/local/bin/docker-compose
 
     - name: Install cockroachdb from script
       become: true
@@ -195,21 +205,14 @@
         tar -xvzf cockroach-v23.1.0-alpha.5.linux-amd64.tgz
         chmod +x cockroach-v23.1.0-alpha.5.linux-amd64/cockroach
         sudo mv cockroach-v23.1.0-alpha.5.linux-amd64/cockroach /usr/local/bin
+        sudo rm -rf cockroach-v23.1.0-alpha.5.linux-amd64 cockroach-v23.1.0-alpha.5.linux-amd64.tgz
 
-
-    - name: Install Python from script
+    - name: Install nvm from script
       become: true
       environment:
         HOME: "/home/{{ user_name }}"
       shell: |
-        sudo mkdir /python 
-        cd /python
-        sudo wget https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz
-        sudo tar -xzvf Python-3.10.0.tgz
-        cd Python-3.10.0
-        ./configure --enable-optimizations
-        cd /python/Python-3.10.0
-        sudo make altinstall
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | zsh
 
     - name: Setting up preveliges for sudo user and docker
       become: true
@@ -219,3 +222,17 @@
         sudo usermod -aG sudo $USER
         sudo usermod -aG docker $USER
         sudo chmod 666 /var/run/docker.sock
+
+    - name: Install oh-my-zsh from script
+      become: true
+      environment:
+        HOME: "/home/{{ user_name }}"
+      shell: |
+        curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+
+    - name: changing .zshrc
+      become: true
+      shell: |
+        rm -r /home/{{ user_name }}/.zshrc
+        cp -r .zshrc_new /home/{{ user_name }}
+        source .zshrc_new
