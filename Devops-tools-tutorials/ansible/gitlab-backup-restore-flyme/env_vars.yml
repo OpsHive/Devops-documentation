@@ -1,0 +1,22 @@
+host: localhost #given in inventory or /etc/ansible/hosts, but this is written here as a playbook variable
+host_01_name: [localhost]
+host_01: localhost ansible_connection=local # this entry is for inventory file located at ~/ansible/inventory/hosts
+playbook_file: ansible-playbook-gitlab.yml
+package_name: gitlab-ce
+package_version: 14.0.2-ce.0
+gitlab_version: 14.0.2-ce.0
+GITLAB_VERSION: gitlab-ce=14.0.2-ce.0
+GITLAB_URL: http://gitlab.localhost.com
+gpg_key_url: https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey
+provider: AWS
+region: ams3
+aws_access_key_id: DO00P3N9R7PHME9ZMZVE
+aws_secret_access_key: uLWunM1Mduw9lTcVHK1C1Epgsabqga6AWoeom75OYAo
+endpoint: https://ams3.digitaloceanspaces.com
+aws_signature_version: 2
+use_iam_profile: false
+backup_upload_remote_directory: gitlab-backups
+backup_value: 230325-00_00_01
+new_password: opshive@5902525
+backup_file_tar: "./flyme-backup/230325-00_00_01/1679702443_2023_03_25_14.0.2-ee_gitlab_backup.tar"
+backup_file: "./flyme-backup/230325-00_00_01"

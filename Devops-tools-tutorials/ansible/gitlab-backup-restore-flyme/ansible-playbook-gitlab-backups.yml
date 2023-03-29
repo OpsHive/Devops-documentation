@@ -1,0 +1,70 @@
+- name: Ansible Playbook to install GitLab Community Edition "gitlab-ce={{ gitlab_version }}"
+  hosts: "{{ host }}" #hosts should also be given in /etc/ansible/hosts file. 
+  become: yes
+  become_user: root
+
+  handlers:   ## We use Handlers to repeat a task multiple times
+  - name: reconfigure GitLab
+    command: gitlab-ctl reconfigure ## As we need to reconfigure gitlab more than one time after adding multiple files
+  - name: restart GitLab
+    command: gitlab-ctl restart  ## As we need to restart gitlab more than one time after making customization to it
+
+  vars_files:
+    - env_vars.yml  ## Here we give environment variable file name in yml or json format.
+  
+  tasks:
+
+ ## Configure GitLab Backup Settings
+
+  - name: Configure GitLab Backup Path
+    lineinfile:
+      dest: /etc/gitlab/gitlab.rb
+      line: gitlab_rails['backup_gitaly_backup_path'] = "/opt/gitlab/embedded/bin/gitaly-backup"
+      state: present
+
+  - name: Configure GitLab Backup Settings "backup_keep_time"
+    lineinfile: 
+      dest: /etc/gitlab/gitlab.rb
+      line: gitlab_rails['backup_keep_time'] = 604800
+      state: present
+
+  - name: Add GitLab backup upload connection information
+    lineinfile:
+      dest: /etc/gitlab/gitlab.rb
+      line: |
+        gitlab_rails['backup_upload_connection'] = { 
+          'provider' => '{{ provider }}', 
+          'region' => '{{ region }}', 
+          'aws_access_key_id' => '{{ aws_access_key_id }}', 
+          'aws_secret_access_key' => '{{ aws_secret_access_key }}', 
+          'endpoint' => '{{ endpoint }}', 
+          'aws_signature_version' => {{ aws_signature_version }}, 
+          'use_iam_profile' => false ## {{ use_iam_profile }}
+        }
+      state: present
+
+  - name: Configure GitLab Backup Settings "backup_upload_remote_directory"
+    lineinfile:
+      dest: /etc/gitlab/gitlab.rb
+      line: gitlab_rails['backup_upload_remote_directory'] = '{{ backup_upload_remote_directory }}'
+      state: present
+
+  - name: Configure GitLab Backup Settings "backup_multipart_chunk_size"
+    lineinfile:
+      dest: /etc/gitlab/gitlab.rb
+      line: gitlab_rails['backup_multipart_chunk_size'] = 104857600
+      state: present
+    notify:
+      - reconfigure GitLab
+
+  ## Starting Gitlab
+  - name: Start GitLab services # this will work in place of gitlab-ctl start
+    service:
+      name: gitlab-runsvdir
+      state: started
+      enabled: yes
+
+  - name: Notify that playbook has finished
+    local_action:
+      module: debug
+      msg: "Playbook execution has finished, Backup setting has done, go to '{{ GITLAB_URL }}' to login with user 'root' and your password '{{ new_password }}'"

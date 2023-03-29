@@ -1,0 +1,91 @@
+- name: Ansible Playbook to install GitLab Community Edition "gitlab-ce={{ gitlab_version }}"
+  hosts: "{{ host }}" #hosts should also be given in /etc/ansible/hosts file. 
+  become: yes
+  become_user: root
+
+  handlers:   ## We use Handlers to repeat a task multiple times
+  - name: reconfigure GitLab
+    command: gitlab-ctl reconfigure ## As we need to reconfigure gitlab more than one time after adding multiple files
+  - name: restart GitLab
+    command: gitlab-ctl restart  ## As we need to restart gitlab more than one time after making customization to it
+
+  vars_files:
+    - env_vars.yml  ## Here we give environment variable file name in yml or json format.
+  tasks:
+
+  ## To Update and Upgrade apt packages
+  - name: Update and upgrade apt packages
+    apt:
+      update_cache: yes
+      upgrade: yes
+    become: yes
+
+  ## To Add GitLab repository
+  - name: Add GitLab repository
+    apt_repository:
+      repo: 'deb https://packages.gitlab.com/gitlab/gitlab-ce/ubuntu/ focal main'
+      state: present
+    become: yes
+
+  ## To Install Dependencies
+  - name: Install dependencies
+    apt:
+      name:
+        - tzdata
+        - curl
+        - ca-certificates
+        - openssh-server
+      state: present
+    become: yes
+
+  ## To Import GPG key
+  - name: Import the GPG key
+    shell: curl -fsSL {{ gpg_key_url }} | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/gitlab.gpg
+
+  ## To Update and Upgrade apt packages
+  - name: Update and upgrade apt packages
+    apt:
+      update_cache: yes
+      upgrade: yes
+    become: yes
+
+  ## To Install GitLab
+  - name: Install GitLab CE
+    apt:
+      name: "gitlab-ce={{ gitlab_version }}"
+      state: present
+
+  ## To Remove default external_url
+  - name: Removing default external_url
+    lineinfile:
+      dest: /etc/gitlab/gitlab.rb
+      line: external_url 'http://gitlab.example.com'
+      state: absent
+
+  ## To configure GitLab external_url
+  - name: Configuring GitLab with our external_url
+    lineinfile:
+      dest: /etc/gitlab/gitlab.rb
+      line: external_url '{{ GITLAB_URL }}'
+      state: present
+    notify:
+      - reconfigure GitLab  ## To call handler
+
+  ## To start Gitlab, we can also call handler for this task
+  - name: Starting GitLab services
+    service:
+      name: gitlab-runsvdir
+      state: started
+      enabled: yes
+
+  ## To Reset root password
+  - name: Reset root password
+    become: true
+    shell: |
+      sudo gitlab-rails runner "user = User.where(id: 1).first; user.password='{{ new_password }}'; user.password_confirmation='{{ new_password }}'; user.save!"
+
+  ## To Notify by a message that the playbook has finished installation and setting up GitLab with desired features.
+  - name: Congratulation
+    local_action:
+      module: debug
+      msg: "Playbook execution has finished go to '{{ GITLAB_URL }}' to login with your given password"

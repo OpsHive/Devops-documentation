@@ -1,0 +1,38 @@
+---
+- name: restore backups
+  hosts: "{{ host }}" #hosts should also be given in /etc/ansible/hosts file. 
+  become: yes
+  become_user: root
+  vars:
+    backup_file: "./flyme-backup/230325-00_00_01/1679702443_2023_03_25_14.0.2-ee_gitlab_backup.tar"
+  tasks:
+    - name: Stop GitLab service
+      systemd:
+        name: gitlab-runsvdir.service
+        state: stopped
+
+    - name: Copy tar file to remote server
+      copy:
+        src: "{{ backup_file }}"
+        dest: /tmp/backup.tar
+
+    - name: Extract backup
+      shell: tar -xvf /tmp/backup.tar -C /var/opt/gitlab/backups/
+
+    # - name: Unpack backup file
+    #   unarchive:
+    #     src: "{{ backup_file }}"
+    #     dest: "/tmp/backup"
+
+    - name: Restore GitLab backup
+      command: gitlab-backup restore BACKUP=230325-00_00_01
+
+    - name: Start GitLab service
+      systemd:
+        name: gitlab-runsvdir.service
+        state: started
+
+    - name: Remove backup tar file
+      file:
+        path: /tmp/backup.tar
+        state: absent
