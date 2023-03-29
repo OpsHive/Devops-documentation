@@ -65,6 +65,11 @@
         update_cache: yes
         upgrade: yes
 
+    - name: Install konsole
+      pacman:
+        name: konsole
+        state: present
+
     - name: Update snapd
       shell: snap refresh
 
