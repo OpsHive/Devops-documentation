@@ -1,0 +1,40 @@
+---
+- name: Install applications via snapd
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    user_name: altaf
+    ansible_become_password: 0683
+
+  tasks:
+    - name: Install snapd
+      pacman:
+        name: konsole
+        state: present
+
+    # - name: Enable snapd socket
+    #   systemd:
+    #     name: snapd.socket
+    #     state: started
+    #     enabled: true
+
+    # - name: Install Chromium
+    #   community.general.snap:
+    #     name: chromium
+    #     classic: true
+
+    # - name: Install Slack
+    #   community.general.snap:
+    #     name: slack
+    #     classic: true
+
+    # - name: Install VSCode
+    #   community.general.snap:
+    #     name: code
+    #     classic: true
+
+    # - name: Install WhatsApp
+    #   community.general.snap:
+    #     name: whatsapp-for-linux
+    #     classic: true
