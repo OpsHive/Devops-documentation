@@ -6,7 +6,7 @@
 # will run the ansible-playbook.
 
 # update package index
-sudo pacman -Syu
+#sudo pacman -Syu
 
 # install ansible
 sudo pacman -S ansible --noconfirm
@@ -36,4 +36,4 @@ cat ~/ansible/inventory/hosts
 PLAYBOOK_FILE=$(grep "playbook_file:" env_vars.yml | awk '{print $2}')
 
 # run the Ansible playbook
-ansible-playbook $PLAYBOOK_FILE -i ~/ansible/inventory/hosts
+#ansible-playbook $PLAYBOOK_FILE -i ~/ansible/inventory/hosts
